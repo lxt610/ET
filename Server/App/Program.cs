@@ -12,13 +12,14 @@ namespace ET
 		private static void Main(string[] args)
 		{
 			// 异步方法全部会回掉到主线程
-			SynchronizationContext.SetSynchronizationContext(OneThreadSynchronizationContext.Instance);
+			SynchronizationContext.SetSynchronizationContext(ThreadSynchronizationContext.Instance);
 			
 			try
 			{		
 				Game.EventSystem.Add(typeof(Game).Assembly);
 				Game.EventSystem.Add(DllHelper.GetHotfixAssembly());
 				
+				ProtobufHelper.Init();
 				MongoHelper.Init();
 				
 				// 命令行参数
@@ -26,24 +27,21 @@ namespace ET
 				Parser.Default.ParseArguments<Options>(args)
 						.WithNotParsed(error => throw new Exception($"命令行格式错误!"))
 						.WithParsed(o => { options = o; });
-				
-				Game.Scene.AddComponent(options);
-				
-				IdGenerater.Process = (byte) options.Process;
+
+				Game.Options = options;
 				
 				LogManager.Configuration.Variables["appIdFormat"] = $"{Game.Scene.Id:0000}";
 				
 				Log.Info($"server start........................ {Game.Scene.Id}");
 
-				// 先加这里，后面删掉
-				Game.EventSystem.Run(EventIdType.AfterScenesAdd);
+				Game.EventSystem.Publish(new EventType.AppStart());
 				
 				while (true)
 				{
 					try
 					{
 						Thread.Sleep(1);
-						OneThreadSynchronizationContext.Instance.Update();
+						ThreadSynchronizationContext.Instance.Update();
 						Game.EventSystem.Update();
 					}
 					catch (Exception e)

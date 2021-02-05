@@ -1,7 +1,4 @@
 using System.Collections.Generic;
-using System.Threading;
-
-using PF;
 using UnityEngine;
 
 namespace ET
@@ -23,8 +20,9 @@ namespace ET
                     self.BroadcastPath(path, i, 3);
                 }
                 Vector3 v3 = path[i];
-                await self.Parent.GetComponent<MoveComponent>().MoveToAsync(v3, self.CancellationTokenSource.Token);
+                //await self.Parent.GetComponent<MoveComponent>().MoveToAsync(v3, self.CancellationToken);
             }
+            await ETTask.CompletedTask;
         }
         
         public static async ETVoid MoveTo(this UnitPathComponent self, Vector3 target)
@@ -37,18 +35,15 @@ namespace ET
             self.Target = target;
 
             Unit unit = self.GetParent<Unit>();
-            
-            
-            PathfindingComponent pathfindingComponent = self.Domain.GetComponent<PathfindingComponent>();
-            self.ABPath = EntityFactory.Create<ABPathWrap, Vector3, Vector3>(self.Domain, unit.Position, new Vector3(target.x, target.y, target.z));
-            pathfindingComponent.Search(self.ABPath);
-            Log.Debug($"find result: {self.ABPath.Result.ListToString()}");
-            
-            self.CancellationTokenSource?.Cancel();
-            self.CancellationTokenSource = EntityFactory.Create<ETCancellationTokenSource>(self.Domain);
-            await self.MoveAsync(self.ABPath.Result);
-            self.CancellationTokenSource.Dispose();
-            self.CancellationTokenSource = null;
+            unit.Position = target;
+
+            M2C_PathfindingResult m2CPathfindingResult = new M2C_PathfindingResult();
+            m2CPathfindingResult.X = unit.Position.x;
+            m2CPathfindingResult.Y = unit.Position.y;
+            m2CPathfindingResult.Z = unit.Position.z;
+            m2CPathfindingResult.Id = unit.Id;
+            MessageHelper.Broadcast(unit, m2CPathfindingResult);
+            await ETTask.CompletedTask;
         }
 
         // 从index找接下来3个点，广播
@@ -61,18 +56,6 @@ namespace ET
             m2CPathfindingResult.Y = unitPos.y;
             m2CPathfindingResult.Z = unitPos.z;
             m2CPathfindingResult.Id = unit.Id;
-                
-            for (int i = 0; i < offset; ++i)
-            {
-                if (index + i >= self.ABPath.Result.Count)
-                {
-                    break;
-                }
-                Vector3 v = self.ABPath.Result[index + i];
-                m2CPathfindingResult.Xs.Add(v.x);
-                m2CPathfindingResult.Ys.Add(v.y);
-                m2CPathfindingResult.Zs.Add(v.z);
-            }
             MessageHelper.Broadcast(unit, m2CPathfindingResult);
         }
     }

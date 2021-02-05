@@ -5,7 +5,6 @@ using MongoDB.Driver;
 
 namespace ET
 {
-	[ObjectSystem]
 	public class DBComponentAwakeSystem : AwakeSystem<DBComponent, string, string>
 	{
 		public override void Awake(DBComponent self, string dbConnection, string dbName)
@@ -31,7 +30,6 @@ namespace ET
 		}
 	}
 	
-	[ObjectSystem]
     public class DBComponentDestroySystem: DestroySystem<DBComponent>
     {
         public override void Destroy(DBComponent self)
@@ -159,7 +157,7 @@ namespace ET
 
 		    using (await CoroutineLockComponent.Instance.Wait(CoroutineLockType.DB, entity.Id % DBComponent.TaskCount))
 		    {
-			    await self.GetCollection(collection).ReplaceOneAsync(d => d.Id == entity.Id, entity, new UpdateOptions { IsUpsert = true });
+			    await self.GetCollection(collection).ReplaceOneAsync(d => d.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true });
 		    }
 	    }
 
@@ -179,7 +177,7 @@ namespace ET
 
 		    using (await CoroutineLockComponent.Instance.Wait(CoroutineLockType.DB, taskId % DBComponent.TaskCount))
 		    {
-			    await self.GetCollection(collection).ReplaceOneAsync(d => d.Id == entity.Id, entity, new UpdateOptions { IsUpsert = true });
+			    await self.GetCollection(collection).ReplaceOneAsync(d => d.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true });
 		    }
 	    }
 
@@ -201,7 +199,7 @@ namespace ET
 				    }
 
 				    await self.GetCollection(entity.GetType().Name)
-						    .ReplaceOneAsync(d => d.Id == entity.Id, entity, new UpdateOptions { IsUpsert = true });
+						    .ReplaceOneAsync(d => d.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true });
 			    }
 		    }
 	    }
